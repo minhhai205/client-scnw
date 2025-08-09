@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOMP WebSocket Client - Full Featured</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            padding: 0;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="text"], 
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, 
+        input[type="password"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        #messageInput {
+            height: 150px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected {
+            background: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+        }
+
+        .status-connecting {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #connectionStatus {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        #logs {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            border: 2px solid #333;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-success {
+            color: #28a745;
+        }
+
+        .log-error {
+            color: #dc3545;
+        }
+
+        .log-warning {
+            color: #ffc107;
+        }
+
+        .log-info {
+            color: #17a2b8;
+        }
+
+        .log-message {
+            color: #e83e8c;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: #e7f1ff;
+        }
+
+        .subscription-list {
+            background: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .subscription-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .subscription-topic {
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .message-preview {
+            background: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .heartbeat-info {
+            display: flex;
+            gap: 15px;
+        }
+
+        .heartbeat-info > div {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔌 STOMP WebSocket Client</h1>
+
+        <!-- Connection Statistics -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="messagesSent">0</div>
+                <div class="stat-label">Messages Sent</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="messagesReceived">0</div>
+                <div class="stat-label">Messages Received</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="activeSubscriptions">0</div>
+                <div class="stat-label">Active Subscriptions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="connectionTime">--</div>
+                <div class="stat-label">Connection Time</div>
+            </div>
+        </div>
+
+        <!-- Connection Configuration -->
+        <div class="section">
+            <h2>🌐 Connection Configuration</h2>
+            
+            <div class="form-group">
+                <label>
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="connectionStatus">Disconnected</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="wsUrl">WebSocket URL:</label>
+                <input type="text" id="wsUrl" value="http://localhost:8080/ws" placeholder="ws://localhost:8080/ws" />
+            </div>
+
+            <div class="form-group">
+                <label for="authToken">Authorization Token:</label>
+                <input type="password" id="authToken" placeholder="Bearer your-token-here" />
+            </div>
+
+            <div class="heartbeat-info">
+                <div class="form-group">
+                    <label for="heartbeatOut">Heartbeat Outgoing (ms):</label>
+                    <input type="text" id="heartbeatOut" value="20000" />
+                </div>
+                <div class="form-group">
+                    <label for="heartbeatIn">Heartbeat Incoming (ms):</label>
+                    <input type="text" id="heartbeatIn" value="30000" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="reconnectDelay">Auto Reconnect Delay (ms):</label>
+                <input type="text" id="reconnectDelay" value="5000" />
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="autoReconnect" checked> Enable Auto Reconnect
+                </label>
+            </div>
+
+            <div class="controls-grid">
+                <button onclick="connect()" class="btn-success" id="connectBtn">🔌 Connect</button>
+                <button onclick="disconnect()" class="btn-danger" id="disconnectBtn" disabled>⏹️ Disconnect</button>
+                <button onclick="testConnection()" class="btn-info" id="testBtn" disabled>🔍 Test Connection</button>
+            </div>
+        </div>
+
+        <!-- Subscription Management -->
+        <div class="section">
+            <h2>📡 Subscription Management</h2>
+            
+            <div class="form-group">
+                <label for="subTopic">Subscribe Topic(s) (comma-separated):</label>
+                <input type="text" id="subTopic" value="/topic/conversation/{id},/user/queue/notification" 
+                       placeholder="/topic/example,/user/queue/notifications" />
+            </div>
+
+            <div class="controls-grid">
+                <button onclick="subscribe()" class="btn-success" id="subscribeBtn" disabled>📡 Subscribe</button>
+                <button onclick="unsubscribeAll()" class="btn-warning" id="unsubscribeBtn" disabled>❌ Unsubscribe All</button>
+            </div>
+
+            <div class="subscription-list" id="subscriptionList">
+                <div style="text-align: center; color: #6c757d; padding: 20px;">
+                    No active subscriptions
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Sending -->
+        <div class="section">
+            <h2>📤 Send Messages</h2>
+            
+            <div class="form-group">
+                <label for="sendDest">Destination:</label>
+                <input type="text" id="sendDest" value="/app/message/{id}" placeholder="/app/send" />
+            </div>
+
+            <div class="form-group">
+                <label for="messageType">Message Type:</label>
+                <select id="messageType" onchange="updateMessageTemplate()">
+                    <option value="message">Message</option>
+                    <option value="message_and_file">Message And File</option>
+                    <option value="notification">Notification</option>
+                    <option value="custom">Custom JSON</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="messageInput">Message Content (use "__FILE__" as file placeholder):</label>
+                <textarea id="messageInput" placeholder='{"content": "message...."}'></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="fileInput">Attach Files:</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" multiple />
+                </div>
+            </div>
+
+            <div class="message-preview" id="messagePreview" style="display: none;">
+                <strong>Message Preview:</strong>
+                <pre id="previewContent"></pre>
+            </div>
+
+            <div class="controls-grid">
+                <button onclick="sendMessage()" class="btn-success" id="sendBtn" disabled>📤 Send Message</button>
+                <button onclick="previewMessage()" class="btn-info" id="previewBtn">👁️ Preview</button>
+                <button onclick="clearMessage()" class="btn-warning">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h2>📋 Activity Logs</h2>
+            
+            <div class="controls-grid">
+                <button onclick="clearLogs()" class="btn-warning">🗑️ Clear Logs</button>
+                <button onclick="exportLogs()" class="btn-info">💾 Export Logs</button>
+                <button onclick="toggleAutoScroll()" id="autoScrollBtn" class="btn-info">📜 Auto Scroll: ON</button>
+            </div>
+
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let stompClient = null;
+        let token = "";
+        let subscriptions = {};
+        let stats = {
+            messagesSent: 0,
+            messagesReceived: 0,
+            connectionStartTime: null
+        };
+        let autoScroll = true;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+        let reconnectTimeout = null;
+
+        // Message templates
+        const messageTemplates = {
+            message: `{"content": "message...."}`,
+            message_and_file: `{"content": "noi dung tin nhan....", "messageMedia": [{"mediaType": "IMAGE", "mediaData": "__FILE__"}]}`,
+            notification: '{"type": "notification", "title": "New Message", "body": "You have received a new message", "priority": "normal"}',
+            custom: '{"type": "custom", "data": {}}'
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConnectionStatus('disconnected');
+            updateMessageTemplate();
+            updateStats();
+            log('🚀 STOMP Client initialized and ready to use', 'info');
+        });
+
+        // Logging functions
+        function log(message, type = 'info') {
+            const logs = document.getElementById("logs");
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️',
+                message: '📨'
+            };
+            
+            logEntry.textContent = `[${timestamp}] ${icons[type] || 'ℹ️'} ${message}`;
+            logs.appendChild(logEntry);
+            
+            if (autoScroll) {
+                logs.scrollTop = logs.scrollHeight;
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById("logs").innerHTML = "";
+            log('📝 Logs cleared', 'info');
+        }
+
+        function exportLogs() {
+            const logs = document.getElementById("logs").textContent;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stomp-logs-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('💾 Logs exported successfully', 'success');
+        }
+
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = document.getElementById('autoScrollBtn');
+            btn.textContent = `📜 Auto Scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+            log(`📜 Auto scroll ${autoScroll ? 'enabled' : 'disabled'}`, 'info');
+        }
+
+        // Connection status management
+        function updateConnectionStatus(status) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            const sendBtn = document.getElementById('sendBtn');
+            const testBtn = document.getElementById('testBtn');
+            const unsubscribeBtn = document.getElementById('unsubscribeBtn');
+
+            switch(status) {
+                case 'connected':
+                    indicator.className = 'status-indicator status-connected';
+                    statusText.textContent = 'Connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    subscribeBtn.disabled = false;
+                    sendBtn.disabled = false;
+                    testBtn.disabled = false;
+                    unsubscribeBtn.disabled = false;
+                    stats.connectionStartTime = Date.now();
+                    break;
+                case 'connecting':
+                    indicator.className = 'status-indicator status-connecting';
+                    statusText.textContent = 'Connecting...';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    subscribeBtn.disabled = true;
+                    sendBtn.disabled = true;
+                    testBtn.disabled = true;
+                    unsubscribeBtn.disabled = true;
+                    break;
+                case 'disconnected':
+                default:
+                    indicator.className = 'status-indicator status-disconnected';
+                    statusText.textContent = 'Disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    subscribeBtn.disabled = true;
+                    sendBtn.disabled = true;
+                    testBtn.disabled = true;
+                    unsubscribeBtn.disabled = true;
+                    stats.connectionStartTime = null;
+                    break;
+            }
+            updateStats();
+        }
+
+        // Statistics update
+        function updateStats() {
+            document.getElementById('messagesSent').textContent = stats.messagesSent;
+            document.getElementById('messagesReceived').textContent = stats.messagesReceived;
+            document.getElementById('activeSubscriptions').textContent = Object.keys(subscriptions).length;
+            
+            if (stats.connectionStartTime) {
+                const duration = Math.floor((Date.now() - stats.connectionStartTime) / 1000);
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                document.getElementById('connectionTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                document.getElementById('connectionTime').textContent = '--';
+            }
+        }
+
+        // Update stats every second
+        setInterval(updateStats, 1000);
+
+        // Connection functions
+        function connect() {
+            const wsUrl = document.getElementById("wsUrl").value.trim();
+            const rawToken = document.getElementById("authToken").value.trim();
+            const authToken = rawToken.startsWith("Bearer ") ? rawToken : "Bearer " + rawToken;
+            const heartbeatOut = parseInt(document.getElementById("heartbeatOut").value) || 20000;
+            const heartbeatIn = parseInt(document.getElementById("heartbeatIn").value) || 30000;
+
+            if (!wsUrl) {
+                log('❌ WebSocket URL is required', 'error');
+                return;
+            }
+
+            updateConnectionStatus('connecting');
+            log(`🔌 Attempting to connect to ${wsUrl}`, 'info');
+
+            try {
+                const socket = new SockJS(wsUrl);
+                stompClient = Stomp.over(socket);
+                
+                // Configure heartbeat
+                stompClient.heartbeat.outgoing = heartbeatOut;
+                stompClient.heartbeat.incoming = heartbeatIn;
+                
+                // Store token globally
+                
+                token = authToken;
+                
+                // Prepare headers
+                const headers = {};
+                if (token) {
+                    headers.Authorization = token;
+                    log(`🔑 Using authorization token: ${token.substring(0, 20)}...`, 'info');
+                }
+
+                // Connect with success and error callbacks
+                stompClient.connect(
+                    headers,
+                    function (frame) {
+                        updateConnectionStatus('connected');
+                        reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+                        log(`✅ Successfully connected to STOMP server`, 'success');
+                        log(`📊 Session ID: ${frame.headers['session']}`, 'info');
+                        log(`❤️ Heartbeat: out=${heartbeatOut}ms, in=${heartbeatIn}ms`, 'info');
+                        
+                        // Clear any pending reconnect timeout
+                        if (reconnectTimeout) {
+                            clearTimeout(reconnectTimeout);
+                            reconnectTimeout = null;
+                        }
+                    },
+                    function (error) {
+                        updateConnectionStatus('disconnected');
+                        log(`❌ Connection failed: ${error}`, 'error');
+                        
+                        // Auto reconnect if enabled
+                        const autoReconnect = document.getElementById("autoReconnect").checked;
+                        if (autoReconnect && reconnectAttempts < maxReconnectAttempts) {
+                            const delay = parseInt(document.getElementById("reconnectDelay").value) || 5000;
+                            reconnectAttempts++;
+                            log(`🔄 Auto reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms`, 'warning');
+                            
+                            reconnectTimeout = setTimeout(() => {
+                                connect();
+                            }, delay);
+                        } else if (reconnectAttempts >= maxReconnectAttempts) {
+                            log(`❌ Max reconnect attempts (${maxReconnectAttempts}) reached`, 'error');
+                        }
+                    }
+                );
+
+                // Handle connection close
+                socket.onclose = function(event) {
+                    log(`🔌 WebSocket connection closed: ${event.code} - ${event.reason}`, 'warning');
+                };
+                
+            } catch (error) {
+                updateConnectionStatus('disconnected');
+                log(`❌ Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (stompClient !== null && stompClient.connected) {
+                // Clear reconnect timeout
+                if (reconnectTimeout) {
+                    clearTimeout(reconnectTimeout);
+                    reconnectTimeout = null;
+                }
+                
+                // Unsubscribe from all topics first
+                unsubscribeAll();
+                
+                // Disconnect from STOMP
+                stompClient.disconnect(() => {
+                    updateConnectionStatus('disconnected');
+                    log('🔌 Successfully disconnected from STOMP server', 'success');
+                    stompClient = null;
+                    token = "";
+                });
+            } else {
+                updateConnectionStatus('disconnected');
+                log('⚠️ Already disconnected', 'warning');
+            }
+        }
+
+        function testConnection() {
+            if (!stompClient || !stompClient.connected) {
+                log('⚠️ Not connected to test', 'warning');
+                return;
+            }
+
+            const testMessage = {
+                type: 'ping',
+                timestamp: new Date().toISOString(),
+                message: 'Connection test'
+            };
+
+            try {
+                stompClient.send('/app/test', { Authorization: token }, JSON.stringify(testMessage));
+                log('🔍 Connection test message sent', 'info');
+                stats.messagesSent++;
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Subscription functions
+        function subscribe() {
+            if (!stompClient || !stompClient.connected) {
+                log('⚠️ You must connect first before subscribing', 'warning');
+                return;
+            }
+
+            const input = document.getElementById("subTopic").value.trim();
+            if (!input) {
+                log('⚠️ Please enter at least one topic to subscribe to', 'warning');
+                return;
+            }
+
+            const topics = input
+                .split(",")
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            topics.forEach(topic => {
+                if (subscriptions[topic]) {
+                    log(`🔁 Already subscribed to ${topic}. Unsubscribing first.`, 'warning');
+                    subscriptions[topic].unsubscribe();
+                }
+
+                try {
+                    const headers = {};
+                    if (token) {
+                        headers.Authorization = token;
+                    }
+
+                    const subscription = stompClient.subscribe(
+                        topic,
+                        function (message) {
+                            stats.messagesReceived++;
+                            const timestamp = new Date().toLocaleTimeString();
+                            log(`📥 [${topic}] Received message at ${timestamp}`, 'message');
+                            
+                            try {
+                                const parsed = JSON.parse(message.body);
+                                log(`📥 Message content: ${JSON.stringify(parsed, null, 2)}`, 'message');
+                            } catch (e) {
+                                log(`📥 Raw message: ${message.body}`, 'message');
+                            }
+                        },
+                        headers
+                    );
+
+                    subscriptions[topic] = subscription;
+                    log(`📡 Successfully subscribed to: ${topic}`, 'success');
+                } catch (error) {
+                    log(`❌ Failed to subscribe to ${topic}: ${error.message}`, 'error');
+                }
+            });
+
+            updateSubscriptionList();
+            updateStats();
+        }
+
+        function unsubscribeAll() {
+            const topicCount = Object.keys(subscriptions).length;
+            
+            Object.keys(subscriptions).forEach(topic => {
+                try {
+                    subscriptions[topic].unsubscribe();
+                    log(`❎ Unsubscribed from: ${topic}`, 'success');
+                } catch (error) {
+                    log(`❌ Failed to unsubscribe from ${topic}: ${error.message}`, 'error');
+                }
+            });
+            
+            subscriptions = {};
+            updateSubscriptionList();
+            updateStats();
+            
+            if (topicCount > 0) {
+                log(`✅ Unsubscribed from all ${topicCount} topics`, 'success');
+            } else {
+                log('⚠️ No active subscriptions to unsubscribe from', 'warning');
+            }
+        }
+
+        function unsubscribeFromTopic(topic) {
+            if (subscriptions[topic]) {
+                try {
+                    subscriptions[topic].unsubscribe();
+                    delete subscriptions[topic];
+                    log(`❎ Unsubscribed from: ${topic}`, 'success');
+                    updateSubscriptionList();
+                    updateStats();
+                } catch (error) {
+                    log(`❌ Failed to unsubscribe from ${topic}: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function updateSubscriptionList() {
+            const list = document.getElementById('subscriptionList');
+            const topics = Object.keys(subscriptions);
+            
+            if (topics.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No active subscriptions</div>';
+            } else {
+                list.innerHTML = topics.map(topic => `
+                    <div class="subscription-item">
+                        <span class="subscription-topic">${topic}</span>
+                        <button onclick="unsubscribeFromTopic('${topic}')" class="btn-danger" style="padding: 5px 10px; font-size: 12px;">
+                            ❌ Unsubscribe
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Message functions
+        function updateMessageTemplate() {
+            const messageType = document.getElementById('messageType').value;
+            const messageInput = document.getElementById('messageInput');
+            
+            if (messageTemplates[messageType]) {
+                messageInput.value = messageTemplates[messageType];
+            }
+        }
+
+        function previewMessage() {
+            const messageRaw = document.getElementById('messageInput').value;
+            const fileInput = document.getElementById('fileInput');
+            const files = Array.from(fileInput.files || []);
+            const preview = document.getElementById('messagePreview');
+            const previewContent = document.getElementById('previewContent');
+
+            try {
+                const messageJson = JSON.parse(messageRaw || '{}');
+                
+                if (files.length > 0) {
+                    const fileCount = countFilePlaceholders(messageJson);
+                    if (fileCount > files.length) {
+                        previewContent.textContent = `⚠️ Warning: ${fileCount} file placeholders found but only ${files.length} files selected.`;
+                    } else {
+                        previewContent.textContent = `Message with ${files.length} file(s):\n${JSON.stringify(messageJson, null, 2)}`;
+                    }
+                } else {
+                    previewContent.textContent = JSON.stringify(messageJson, null, 2);
+                }
+                
+                preview.style.display = 'block';
+            } catch (e) {
+                previewContent.textContent = `❌ Invalid JSON: ${e.message}`;
+                preview.style.display = 'block';
+            }
+        }
+
+        function clearMessage() {
+            document.getElementById('messageInput').value = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('messagePreview').style.display = 'none';
+            log('🗑️ Message content cleared', 'info');
+        }
+
+        function sendMessage() {
+            const destination = document.getElementById('sendDest').value.trim();
+            const messageRaw = document.getElementById('messageInput').value;
+            const fileInput = document.getElementById('fileInput');
+            const files = Array.from(fileInput.files || []);
+
+            if (!stompClient || !stompClient.connected) {
+                log('⚠️ Not connected to STOMP server', 'warning');
+                return;
+            }
+
+            if (!destination) {
+                log('⚠️ Destination is required', 'warning');
+                return;
+            }
+
+            try {
+                const messageJson = JSON.parse(messageRaw || '{}');
+
+                if (files.length > 0) {
+                    log(`📎 Processing ${files.length} file(s) for upload...`, 'info');
+                    
+                    readFilesAsBase64(files).then((filePayloads) => {
+                        let fileIndex = 0;
+
+                        const replaced = replaceFilePlaceholders(messageJson, () => {
+                            if (fileIndex < filePayloads.length) {
+                                return filePayloads[fileIndex++];
+                            } else {
+                                throw new Error('❌ Not enough files for __FILE__ placeholders.');
+                            }
+                        });
+
+                        const headers = {};
+                        if (token) {
+                            headers.Authorization = token;
+                        }
+
+                        console.log(JSON.stringify(replaced));
+                        stompClient.send(destination, headers, JSON.stringify(replaced));
+                        
+                        stats.messagesSent++;
+                        log(`📤 Message with files sent to: ${destination}`, 'success');
+                        log(`📄 Files included: ${files.map(f => f.name).join(', ')}`, 'info');
+                        
+                    }).catch((err) => {
+                        log(`❌ File processing error: ${err.message}`, 'error');
+                    });
+                } else {
+                    const fileCount = countFilePlaceholders(messageJson);
+                    if (fileCount > 0) {
+                        log(`⚠️ Found ${fileCount} __FILE__ placeholder(s) but no files selected`, 'warning');
+                        return;
+                    }
+
+                    const headers = {};
+                    if (token) {
+                        headers.Authorization = token;
+                    }
+
+                    stompClient.send(destination, headers, JSON.stringify(messageJson));
+                    // console.log(JSON.stringify(messageJson))
+                    stats.messagesSent++;
+                    log(`📤 Message sent to: ${destination}`, 'success');
+                    log(`📝 Content: ${JSON.stringify(messageJson, null, 2)}`, 'info');
+                }
+            } catch (e) {
+                log(`❌ Invalid JSON format: ${e.message}`, 'error');
+            }
+        }
+
+        // File handling functions
+        function countFilePlaceholders(obj) {
+            let count = 0;
+            const traverse = (node) => {
+                if (node === "__FILE__") {
+                    count++;
+                } else if (Array.isArray(node)) {
+                    node.forEach(traverse);
+                } else if (typeof node === "object" && node !== null) {
+                    Object.values(node).forEach(traverse);
+                }
+            };
+            traverse(obj);
+            return count;
+        }
+
+        function readFilesAsBase64(files) {
+            return Promise.all(files.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        const base64Data = event.target.result.split(",")[1];
+                        resolve({
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            base64Data: base64Data,
+                            uploadedAt: new Date().toISOString()
+                        });
+                    };
+                    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+                    reader.readAsDataURL(file);
+                });
+            }));
+        }
+
+        function replaceFilePlaceholders(obj, getNextFile) {
+            if (typeof obj === "string" && obj === "__FILE__") {
+                return getNextFile();
+            } else if (Array.isArray(obj)) {
+                return obj.map((item) => replaceFilePlaceholders(item, getNextFile));
+            } else if (typeof obj === "object" && obj !== null) {
+                const replaced = {};
+                for (const key in obj) {
+                    replaced[key] = replaceFilePlaceholders(obj[key], getNextFile);
+                }
+                return replaced;
+            } else {
+                return obj;
+            }
+        }
+
+        // Utility functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Auto-update connection time
+        setInterval(() => {
+            if (stats.connectionStartTime) {
+                updateStats();
+            }
+        }, 1000);
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (stompClient && stompClient.connected) {
+                disconnect();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Ctrl+Enter to send message
+            if (event.ctrlKey && event.key === 'Enter') {
+                if (document.getElementById('sendBtn').disabled === false) {
+                    sendMessage();
+                }
+            }
+            
+            // Escape to clear logs
+            if (event.key === 'Escape') {
+                if (confirm('Clear all logs?')) {
+                    clearLogs();
+                }
+            }
+        });
+
+        // Add tooltips and help text
+        function showHelp() {
+            const helpText = `
+🔌 STOMP WebSocket Client Help:
+
+Connection:
+- Enter WebSocket URL (e.g., ws://localhost:8080/ws)
+- Add Bearer token if authentication required
+- Configure heartbeat intervals for keep-alive
+- Enable auto-reconnect for stability
+
+Subscriptions:
+- Enter topic names separated by commas
+- Topics usually start with /topic/ or /user/queue/
+- Click Subscribe to listen for messages
+- View active subscriptions in the list below
+
+Sending Messages:
+- Choose message type from dropdown
+- Edit JSON content in textarea
+- Use "__FILE__" placeholder for file uploads
+- Preview before sending
+
+Keyboard Shortcuts:
+- Ctrl+Enter: Send message
+- Escape: Clear logs (with confirmation)
+
+Tips:
+- Check connection status indicator
+- Monitor statistics at the top
+- Export logs for debugging
+- Use test connection to verify setup
+            `;
+            alert(helpText);
+        }
+
+        // Add help button functionality
+        const helpButton = document.createElement('button');
+        helpButton.textContent = '❓ Help';
+        helpButton.className = 'btn-info';
+        helpButton.onclick = showHelp;
+        helpButton.style.position = 'fixed';
+        helpButton.style.bottom = '20px';
+        helpButton.style.right = '20px';
+        helpButton.style.zIndex = '1000';
+        document.body.appendChild(helpButton);
+
+    </script>
+</body>
+</html>
