@@ -416,11 +416,19 @@
         <!-- Subscription Management -->
         <div class="section">
             <h2>📡 Subscription Management</h2>
+
+            <div class="form-group">
+                <label for="topicSelect">Topic Subscribe:</label>
+                <select id="topicSelect" onchange="updateTopicSubscribeTemplate()">
+                    <option value="conversation">/topic/conversation/{id}</option>
+                    <option value="queue">/users/queue/...</option>
+                </select>
+            </div>
             
             <div class="form-group">
                 <label for="subTopic">Subscribe Topic(s) (comma-separated):</label>
-                <input type="text" id="subTopic" value="/topic/conversation/{id},/user/queue/notification" 
-                       placeholder="/topic/example,/user/queue/notifications" />
+                <input type="text" id="subTopic" value="/topic/conversation/" 
+                       placeholder="/topic/conversation/{id},/users/queue/..." />
             </div>
 
             <div class="controls-grid">
@@ -437,15 +445,15 @@
 
         <!-- Message Sending -->
         <div class="section">
-            <h2>📤 Send Messages</h2>
+            <h2>📤 Send Socket Request</h2>
             
             <div class="form-group">
                 <label for="sendDest">Destination:</label>
-                <input type="text" id="sendDest" value="/app/message/{id}" placeholder="/app/send" />
+                <input type="text" id="sendDest" value="/app/conversation/message/send_to/{id}" placeholder="/app/send" />
             </div>
 
             <div class="form-group">
-                <label for="messageType">Message Type:</label>
+                <label for="messageType">Socket Request Type:</label>
                 <select id="messageType" onchange="updateMessageTemplate()">
                     <option value="message">Message</option>
                     <option value="message_and_file">Message And File</option>
@@ -455,7 +463,7 @@
             </div>
 
             <div class="form-group">
-                <label for="messageInput">Message Content (use "__FILE__" as file placeholder):</label>
+                <label for="messageInput">Content (use "__FILE__" as file placeholder):</label>
                 <textarea id="messageInput" placeholder='{"content": "message...."}'></textarea>
             </div>
 
@@ -510,9 +518,16 @@
         // Message templates
         const messageTemplates = {
             message: `{"content": "message...."}`,
-            message_and_file: `{"content": "noi dung tin nhan....", "messageMedia": [{"mediaType": "IMAGE", "mediaData": "__FILE__"}]}`,
+            message_and_file: `{"content": "noi dung tin nhan....", "messageMedia": ["__FILE__"]}`,
             notification: '{"type": "notification", "title": "New Message", "body": "You have received a new message", "priority": "normal"}',
             custom: '{"type": "custom", "data": {}}'
+        };
+        
+
+        // Topic Subscribe templates
+        const topicSubscribe = {
+            conversation: `/topic/conversation/1`,
+            queue: `/users/queue/`
         };
 
         // Initialize page
@@ -885,6 +900,16 @@
             
             if (messageTemplates[messageType]) {
                 messageInput.value = messageTemplates[messageType];
+            }
+        }
+
+        // Topic subscribe functions
+        function updateTopicSubscribeTemplate() {
+            const topicSelectValue = document.getElementById('topicSelect').value;
+            const subTopicInput = document.getElementById('subTopic');
+
+            if (topicSubscribe[topicSelectValue]) {
+                subTopicInput.value = topicSubscribe[topicSelectValue];
             }
         }
 
