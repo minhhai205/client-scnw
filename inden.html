@@ -457,8 +457,7 @@
                 <select id="messageType" onchange="updateMessageTemplate()">
                     <option value="message">Message</option>
                     <option value="message_and_file">Message And File</option>
-                    <option value="notification">Notification</option>
-                    <option value="custom">Custom JSON</option>
+                    <option value="create_conversation">Create Conversation</option>
                 </select>
             </div>
 
@@ -480,7 +479,7 @@
             </div>
 
             <div class="controls-grid">
-                <button onclick="sendMessage()" class="btn-success" id="sendBtn" disabled>📤 Send Message</button>
+                <button onclick="sendMessage()" class="btn-success" id="sendBtn" disabled>📤 Send Request</button>
                 <button onclick="previewMessage()" class="btn-info" id="previewBtn">👁️ Preview</button>
                 <button onclick="clearMessage()" class="btn-warning">🗑️ Clear</button>
             </div>
@@ -519,8 +518,11 @@
         const messageTemplates = {
             message: `{"content": "message...."}`,
             message_and_file: `{"content": "noi dung tin nhan....", "messageMedia": ["__FILE__"]}`,
-            notification: '{"type": "notification", "title": "New Message", "body": "You have received a new message", "priority": "normal"}',
-            custom: '{"type": "custom", "data": {}}'
+            create_conversation:`{
+  "name": "conversation name",
+  "memberIds": [2],
+  "isGroup": true
+}`
         };
         
 
