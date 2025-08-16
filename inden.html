@@ -446,11 +446,6 @@
         <!-- Message Sending -->
         <div class="section">
             <h2>📤 Send Socket Request</h2>
-            
-            <div class="form-group">
-                <label for="sendDest">Destination:</label>
-                <input type="text" id="sendDest" value="/app/conversation/message/send_to/{id}" placeholder="/app/send" />
-            </div>
 
             <div class="form-group">
                 <label for="messageType">Socket Request Type:</label>
@@ -458,7 +453,15 @@
                     <option value="message">Message</option>
                     <option value="message_and_file">Message And File</option>
                     <option value="create_conversation">Create Conversation</option>
+                    <option value="add_user_to_group_chat">Add User To Group Chat</option>
+                    <option value="group_chat_delete_member">Delete Member From Group Chat</option>
+                    <option value="group_chat_leave">Leave Group Chat</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="sendDest">Destination:</label>
+                <input type="text" id="sendDest" value="/app/conversation/message/send_to/{id}" placeholder="/app/send" />
             </div>
 
             <div class="form-group">
@@ -521,8 +524,17 @@
             create_conversation:`{
   "name": "conversation name",
   "memberIds": [2],
-  "isGroup": true
-}`
+  "group": true
+}`,
+            add_user_to_group_chat: `{
+  "conversationId" : 1,
+  "memberIds": [2]
+}`,
+            group_chat_delete_member: `{
+  "conversationId": 1,
+  "memberId": 1
+}`,
+            group_chat_leave:  `Thay member id trên url.`
         };
         
 
@@ -531,6 +543,16 @@
             conversation: `/topic/conversation/1`,
             queue: `/users/queue/`
         };
+
+        const subDestination = {
+            message: `/app/conversation/message/send_to/{id}`,
+            message_and_file: `/app/conversation/message/send_to/{id}`,
+            create_conversation: `/app/conversation/create`,
+            add_user_to_group_chat: `/app/conversation/group/add_member`,
+            group_chat_delete_member: `/app/conversation/group/delete_member`,
+            group_chat_leave: `/app/conversation/group/{id}/leave_group`
+
+        }
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -902,6 +924,11 @@
             
             if (messageTemplates[messageType]) {
                 messageInput.value = messageTemplates[messageType];
+            }
+
+            const subDesInput = document.getElementById("sendDest")
+            if(subDestination[messageType]){
+                subDesInput.value = subDestination[messageType];
             }
         }
 
