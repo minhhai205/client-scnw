@@ -421,7 +421,9 @@
                 <label for="topicSelect">Topic Subscribe:</label>
                 <select id="topicSelect" onchange="updateTopicSubscribeTemplate()">
                     <option value="conversation">/topic/conversation/{id}</option>
-                    <option value="queue">/users/queue/...</option>
+                    <option value="queue_chat">/users/queue/chat</option>
+                    <option value="queue_error">/users/queue/error</option>
+                    <option value="queue_noti">/users/queue/notifications</option>
                 </select>
             </div>
             
@@ -456,6 +458,16 @@
                     <option value="add_user_to_group_chat">Add User To Group Chat</option>
                     <option value="group_chat_delete_member">Delete Member From Group Chat</option>
                     <option value="group_chat_leave">Leave Group Chat</option>
+                    <option value="group_join_request">Create join group request</option>
+                    <option value="approve_group_join_request">Approve group join request</option>
+                    <option value="reject_group_join_request">Reject group join request</option>
+                    <option value="create_group_post">Create new group post</option>
+                    <option value="approve_group_post">Approve group post</option>
+                    <option value="reject_group_post">Reject group post</option>
+                    <option value="post_comment">Post comment</option>
+                    <option value="reply_comment">Reply comment</option>
+                    <option value="post_reaction">Post Reaction</option>
+                    <option value="create_user_post">Create user post</option>
                 </select>
             </div>
 
@@ -534,14 +546,27 @@
   "conversationId": 1,
   "memberId": 1
 }`,
-            group_chat_leave:  `Thay member id trên url.`
+            group_chat_leave:  `{}`,
+            group_join_request: `{}`,
+            approve_group_join_request: `{}`,
+            reject_group_join_request: `{}`,
+            create_group_post: `{"content": "noi dung post...", "postMedia": ["__FILE__"]}`,
+            approve_group_post: `{}`,
+            reject_group_post: `{}`,
+            post_comment: `{"content": "noi dung comment..."}`,
+            reply_comment: `{"content": "noi dung comment reply..."}`,
+            post_reaction: `{}`,
+            create_user_post: `{"content": "noi dung post...", "postMedia": ["__FILE__"]}`,
         };
         
 
         // Topic Subscribe templates
         const topicSubscribe = {
             conversation: `/topic/conversation/1`,
-            queue: `/users/queue/`
+            queue_chat: `/users/queue/chat`,
+            queue_error: `/users/queue/error`,
+            queue_noti: `/users/queue/notifications`
+
         };
 
         const subDestination = {
@@ -550,8 +575,18 @@
             create_conversation: `/app/conversation/create`,
             add_user_to_group_chat: `/app/conversation/group/add_member`,
             group_chat_delete_member: `/app/conversation/group/delete_member`,
-            group_chat_leave: `/app/conversation/group/{id}/leave_group`
-
+            group_chat_leave: `/app/conversation/group/{id}/leave_group`,
+            group_join_request: `/app/group/{groupId}/join-request/create`,
+            approve_group_join_request: `/app/group/join-request/{requestId}/approve`,
+            reject_group_join_request: `/app/group/join-request/{requestId}/reject`,
+            create_group_post: `/app/group/{groupId}/post/create`,
+            approve_group_post: `/app/group/post/{postId}/approve`,
+            reject_group_post: `/app/group/post/{postId}/reject`,
+            post_comment: `/app/comment/post/{postId}`,
+            reply_comment: `/app/comment/reply/{commentId}`,
+            post_reaction: `/app/reaction/post/{postId}`,
+            create_user_post: `/app/user/post/create`
+            
         }
 
         // Initialize page
